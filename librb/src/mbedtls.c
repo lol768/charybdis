@@ -514,9 +514,9 @@ rb_setup_ssl_server(const char *certfile, const char *keyfile, const char *dhfil
 }
 
 int
-rb_ssl_listen(rb_fde_t *F, int backlog, int defer_accept)
+rb_ssl_listen(rb_fde_t *F, int backlog)
 {
-	int result = rb_listen(F, backlog, defer_accept);
+	int result = rb_listen(F, backlog, 1);
 	F->type = RB_FD_SOCKET | RB_FD_LISTEN | RB_FD_SSL;
 
 	return result;

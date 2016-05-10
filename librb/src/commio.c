@@ -779,14 +779,13 @@ rb_listen(rb_fde_t *F, int backlog, int defer_accept)
 	F->type = RB_FD_SOCKET | RB_FD_LISTEN;
 	result = listen(F->fd, backlog);
 
-#ifdef TCP_DEFER_ACCEPT
 	if (defer_accept && !result)
 	{
 		(void)setsockopt(F->fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &backlog, sizeof(int));
 	}
-#endif
+
 #ifdef SO_ACCEPTFILTER
-	if (defer_accept && !result)
+	if (!result)
 	{
 		struct accept_filter_arg afa;
 

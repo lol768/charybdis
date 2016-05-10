@@ -36,14 +36,12 @@ struct Listener
 	rb_fde_t *F;		/* file descriptor */
 	int ref_count;		/* number of connection references */
 	int active;		/* current state of listener */
-	int ssl;		/* ssl listener */
-	int defer_accept;	/* use TCP_DEFER_ACCEPT */
 	int wsock;		/* wsock listener */
 	struct rb_sockaddr_storage addr;
 	char vhost[HOSTLEN + 1];	/* virtual name of listener */
 };
 
-extern void add_listener(int port, const char *vaddr_ip, int family, int ssl, int defer_accept, int wsock);
+extern void add_listener(int port, const char *vaddr_ip, int family, int wsock);
 extern void close_listener(struct Listener *listener);
 extern void close_listeners(void);
 extern const char *get_listener_name(const struct Listener *listener);

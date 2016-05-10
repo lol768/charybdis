@@ -32,7 +32,6 @@
 
 #define CF_TYPE(x) ((x) & CF_MTYPE)
 
-static int yy_defer_accept = 1;
 static int yy_wsock = 0;
 
 struct TopConf *conf_cur_block;
@@ -854,19 +853,13 @@ conf_end_listen(struct TopConf *tc)
 }
 
 static void
-conf_set_listen_defer_accept(void *data)
-{
-	yy_defer_accept = *(unsigned int *) data;
-}
-
-static void
 conf_set_listen_wsock(void *data)
 {
 	yy_wsock = *(unsigned int *) data;
 }
 
 static void
-conf_set_listen_port_both(void *data, int ssl)
+conf_set_listen_port_both(void *data)
 {
 	conf_parm_t *args = data;
 	for (; args; args = args->next)
@@ -879,14 +872,9 @@ conf_set_listen_port_both(void *data, int ssl)
 		}
                 if(listener_address == NULL)
                 {
-			if (!ssl)
-			{
-				conf_report_warning("listener 'ANY/%d': support for plaintext listeners may be removed in a future release per RFCs 7194 & 7258.  "
-                                                    "It is suggested that users be migrated to SSL/TLS connections.", args->v.number);
-			}
-			add_listener(args->v.number, listener_address, AF_INET, ssl, ssl || yy_defer_accept, yy_wsock);
+			add_listener(args->v.number, listener_address, AF_INET, yy_wsock);
 #ifdef RB_IPV6
-			add_listener(args->v.number, listener_address, AF_INET6, ssl, ssl || yy_defer_accept, yy_wsock);
+			add_listener(args->v.number, listener_address, AF_INET6, yy_wsock);
 #endif
                 }
 		else
@@ -899,13 +887,7 @@ conf_set_listen_port_both(void *data, int ssl)
 #endif
 				family = AF_INET;
 
-			if (!ssl)
-			{
-				conf_report_warning("listener '%s/%d': support for plaintext listeners may be removed in a future release per RFCs 7194 & 7258.  "
-                                                    "It is suggested that users be migrated to SSL/TLS connections.", listener_address, args->v.number);
-			}
-
-			add_listener(args->v.number, listener_address, family, ssl, ssl || yy_defer_accept, yy_wsock);
+			add_listener(args->v.number, listener_address, family, yy_wsock);
                 }
 	}
 }
@@ -913,13 +895,14 @@ conf_set_listen_port_both(void *data, int ssl)
 static void
 conf_set_listen_port(void *data)
 {
-	conf_set_listen_port_both(data, 0);
+	conf_set_listen_port_both(data);
 }
 
 static void
 conf_set_listen_sslport(void *data)
 {
-	conf_set_listen_port_both(data, 1);
+	conf_report_warning("sslport is deprecated -- please use port");
+	conf_set_listen_port_both(data);
 }
 
 static void
@@ -2873,7 +2856,6 @@ newconf_init()
 	add_top_conf("privset", NULL, NULL, conf_privset_table);
 
 	add_top_conf("listen", conf_begin_listen, conf_end_listen, NULL);
-	add_conf_item("listen", "defer_accept", CF_YESNO, conf_set_listen_defer_accept);
 	add_conf_item("listen", "wsock", CF_YESNO, conf_set_listen_wsock);
 	add_conf_item("listen", "port", CF_INT | CF_FLIST, conf_set_listen_port);
 	add_conf_item("listen", "sslport", CF_INT | CF_FLIST, conf_set_listen_sslport);

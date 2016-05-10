@@ -146,7 +146,7 @@ show_ports(struct Client *source_p)
 			   get_listener_port(listener),
 			   IsOperAdmin(source_p) ? listener->name : me.name,
 			   listener->ref_count, (listener->active) ? "active" : "disabled",
-			   listener->ssl ? " ssl" : "");
+			   (!ircd_ssl_ok || !get_ssld_count()) ? "" : " ssl");
 	}
 }
 
@@ -241,7 +241,7 @@ inetport(struct Listener *listener)
 		return 0;
 	}
 
-	if(rb_listen(F, SOMAXCONN, listener->defer_accept))
+	if(rb_listen(F, SOMAXCONN, 1))
 	{
 		errstr = strerror(rb_get_sockerr(F));
 		sendto_realops_snomask(SNO_GENERAL, L_ALL,
@@ -319,7 +319,7 @@ find_listener(struct rb_sockaddr_storage *addr)
  * the format "255.255.255.255"
  */
 void
-add_listener(int port, const char *vhost_ip, int family, int ssl, int defer_accept, int wsock)
+add_listener(int port, const char *vhost_ip, int family, int wsock)
 {
 	struct Listener *listener;
 	struct rb_sockaddr_storage vaddr;
@@ -393,8 +393,6 @@ add_listener(int port, const char *vhost_ip, int family, int ssl, int defer_acce
 	}
 
 	listener->F = NULL;
-	listener->ssl = ssl;
-	listener->defer_accept = defer_accept;
 	listener->wsock = wsock;
 
 	if(inetport(listener))
@@ -446,6 +444,48 @@ close_listeners()
 
 #define DLINE_WARNING "ERROR :You have been D-lined.\r\n"
 
+static bool
+ircd_autodetect_tls(rb_fde_t *F)
+{
+	unsigned char peekbuf[10];
+
+start:
+	switch (recv(rb_get_fd(F), peekbuf, sizeof(peekbuf), MSG_PEEK))
+	{
+	case 10:
+		if (peekbuf[9] != 0x03)
+			return false;
+
+	case 9:
+	case 8:
+	case 7:
+	case 6:
+		if (peekbuf[5] != 0x01)
+			return false;
+
+	case 5:
+	case 4:
+	case 3:
+	case 2:
+		if (peekbuf[1] != 0x03)
+			return false;
+
+	case 1:
+		if (peekbuf[0] != 0x16)
+			return false;
+
+		return true;
+
+	case 0:
+		return false;
+	}
+
+	if (errno == EINTR)
+		goto start;
+
+	return false;
+}
+
 /*
  * add_connection - creates a client which has just connected to us on
  * the given fd. The sockhost field is initialized with the ip# of the host.
@@ -465,7 +505,7 @@ add_connection(struct Listener *listener, rb_fde_t *F, struct sockaddr *sai, str
 	 */
 	new_client = make_client(NULL);
 
-	if (listener->ssl)
+	if (ircd_autodetect_tls(F))
 	{
 		rb_fde_t *xF[2];
 		if(rb_socketpair(AF_UNIX, SOCK_STREAM, 0, &xF[0], &xF[1], "Incoming ssld Connection") == -1)
@@ -540,12 +580,6 @@ accept_precallback(rb_fde_t *F, struct sockaddr *addr, rb_socklen_t addrlen, voi
 	struct ConfItem *aconf;
 	static time_t last_oper_notice = 0;
 	int len;
-
-	if(listener->ssl && (!ircd_ssl_ok || !get_ssld_count()))
-	{
-		rb_close(F);
-		return 0;
-	}
 
 	if((maxconnections - 10) < rb_get_fd(F)) /* XXX this is kinda bogus */
 	{
