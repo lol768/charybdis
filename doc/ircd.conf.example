@@ -155,6 +155,10 @@ listen {
 
 	/* If you want to listen on a specific IP only, specify host.
 	 * host definitions apply only to the following port line.
+	 *
+	 * If you enabled defer_accept above, and your platform supports it,
+	 * TLS clients can connect to plaintext ports, you need not specify
+	 * sslport=
 	 */
 	#host = "192.0.2.6";
 	port = 5000, 6665 .. 6669;

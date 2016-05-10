@@ -447,6 +447,64 @@ close_listeners()
 #define DLINE_WARNING "ERROR :You have been D-lined.\r\n"
 
 /*
+ * ircd_autodetect_tls - return whether we think the client is a TLS client
+ *
+ * Specifically, this function peeks at the data the client has sent when
+ * they connected to us; if it looks like a TLS ClientHello packet, we
+ * assume they are a TLS client.
+ *
+ * If defer_accept is not enabled on the port(s), this is likely to fail
+ * with -EAGAIN, which will incorrectly return false
+ *
+ * Practically, this means only platforms with deferred accept support (and
+ * where the ircd administrator enables it for the port(s)) can support
+ * both plaintext and TLS clients on the same port(s). Platforms without
+ * this support will have to configure TLS-only port(s) and direct TLS
+ * clients to those, as was the case prior to mid-2016.
+ */
+static bool
+ircd_autodetect_tls(rb_fde_t *F)
+{
+	unsigned char peekbuf[10];
+
+start:
+	switch (recv(rb_get_fd(F), peekbuf, sizeof(peekbuf), MSG_PEEK))
+	{
+	case 10:
+		if (peekbuf[9] != 0x03)
+			return false;
+
+	case 9:
+	case 8:
+	case 7:
+	case 6:
+		if (peekbuf[5] != 0x01)
+			return false;
+
+	case 5:
+	case 4:
+	case 3:
+	case 2:
+		if (peekbuf[1] != 0x03)
+			return false;
+
+	case 1:
+		if (peekbuf[0] != 0x16)
+			return false;
+
+		return true;
+
+	case 0:
+		return false;
+	}
+
+	if (errno == EINTR)
+		goto start;
+
+	return false;
+}
+
+/*
  * add_connection - creates a client which has just connected to us on
  * the given fd. The sockhost field is initialized with the ip# of the host.
  * The client is sent to the auth module for verification, and not put in
@@ -465,7 +523,7 @@ add_connection(struct Listener *listener, rb_fde_t *F, struct sockaddr *sai, str
 	 */
 	new_client = make_client(NULL);
 
-	if (listener->ssl)
+	if (listener->ssl || ircd_autodetect_tls(F))
 	{
 		rb_fde_t *xF[2];
 		if(rb_socketpair(AF_UNIX, SOCK_STREAM, 0, &xF[0], &xF[1], "Incoming ssld Connection") == -1)
