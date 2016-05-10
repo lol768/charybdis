@@ -453,7 +453,7 @@ start:
 	switch (recv(rb_get_fd(F), peekbuf, sizeof(peekbuf), MSG_PEEK))
 	{
 	case 10:
-		if (peekbuf[9] != 0x03)
+		if (peekbuf[9] < 0x03)
 			return false;
 
 	case 9:
@@ -467,9 +467,6 @@ start:
 	case 4:
 	case 3:
 	case 2:
-		if (peekbuf[1] != 0x03)
-			return false;
-
 	case 1:
 		if (peekbuf[0] != 0x16)
 			return false;
