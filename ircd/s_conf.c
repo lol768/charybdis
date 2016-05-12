@@ -729,6 +729,7 @@ set_default_conf(void)
 	ConfigFileEntry.caller_id_wait = 60;
 	ConfigFileEntry.pace_wait_simple = 1;
 	ConfigFileEntry.short_motd = false;
+	ConfigFileEntry.tls_on_plainports = false;
 	ConfigFileEntry.no_oper_flood = false;
 	ConfigFileEntry.fname_userlog = NULL;
 	ConfigFileEntry.fname_fuserlog = NULL;

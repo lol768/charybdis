@@ -520,7 +520,7 @@ add_connection(struct Listener *listener, rb_fde_t *F, struct sockaddr *sai, str
 	 */
 	new_client = make_client(NULL);
 
-	if (listener->ssl || ircd_autodetect_tls(F))
+	if (listener->ssl || (ConfigFileEntry.tls_on_plainports && ircd_autodetect_tls(F)))
 	{
 		rb_fde_t *xF[2];
 		if(rb_socketpair(AF_UNIX, SOCK_STREAM, 0, &xF[0], &xF[1], "Incoming ssld Connection") == -1)

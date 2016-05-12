@@ -157,8 +157,8 @@ listen {
 	 * host definitions apply only to the following port line.
 	 *
 	 * If you enabled defer_accept above, and your platform supports it,
-	 * TLS clients can connect to plaintext ports, you need not specify
-	 * sslport=
+	 * and you set general { tls_on_plainports } to yes, TLS clients can
+	 * connect to plaintext ports, you need not specify sslport=
 	 */
 	#host = "192.0.2.6";
 	port = 5000, 6665 .. 6669;
@@ -600,6 +600,7 @@ general {
 	pace_wait_simple = 1 second;
 	pace_wait = 10 seconds;
 	short_motd = no;
+	tls_on_plainports = yes;
 	ping_cookie = no;
 	connect_timeout = 30 seconds;
 	default_ident_timeout = 5;

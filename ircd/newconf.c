@@ -879,11 +879,6 @@ conf_set_listen_port_both(void *data, int ssl)
 		}
                 if(listener_address == NULL)
                 {
-			if (!ssl)
-			{
-				conf_report_warning("listener 'ANY/%d': support for plaintext listeners may be removed in a future release per RFCs 7194 & 7258.  "
-                                                    "It is suggested that users be migrated to SSL/TLS connections.", args->v.number);
-			}
 			add_listener(args->v.number, listener_address, AF_INET, ssl, ssl || yy_defer_accept, yy_wsock);
 #ifdef RB_IPV6
 			add_listener(args->v.number, listener_address, AF_INET6, ssl, ssl || yy_defer_accept, yy_wsock);
@@ -898,12 +893,6 @@ conf_set_listen_port_both(void *data, int ssl)
 			else
 #endif
 				family = AF_INET;
-
-			if (!ssl)
-			{
-				conf_report_warning("listener '%s/%d': support for plaintext listeners may be removed in a future release per RFCs 7194 & 7258.  "
-                                                    "It is suggested that users be migrated to SSL/TLS connections.", listener_address, args->v.number);
-			}
 
 			add_listener(args->v.number, listener_address, family, ssl, ssl || yy_defer_accept, yy_wsock);
                 }
@@ -2796,6 +2785,7 @@ static struct ConfEntry conf_general_table[] =
 	{ "throttle_count",	CF_INT,   NULL, 0, &ConfigFileEntry.throttle_count	},
 	{ "throttle_duration",	CF_TIME,  NULL, 0, &ConfigFileEntry.throttle_duration	},
 	{ "short_motd",		CF_YESNO, NULL, 0, &ConfigFileEntry.short_motd		},
+	{ "tls_on_plainports",	CF_YESNO, NULL, 0, &ConfigFileEntry.tls_on_plainports	},
 	{ "stats_c_oper_only",	CF_YESNO, NULL, 0, &ConfigFileEntry.stats_c_oper_only	},
 	{ "stats_e_disabled",	CF_YESNO, NULL, 0, &ConfigFileEntry.stats_e_disabled	},
 	{ "stats_h_oper_only",	CF_YESNO, NULL, 0, &ConfigFileEntry.stats_h_oper_only	},

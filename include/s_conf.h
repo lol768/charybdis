@@ -193,6 +193,7 @@ struct config_file_entry
 	int pace_wait;
 	int pace_wait_simple;
 	int short_motd;
+	int tls_on_plainports;
 	int no_oper_flood;
 	int hide_server;
 	int hide_spoof_ips;
