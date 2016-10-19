@@ -71,4 +71,5 @@ extension_LTLIBRARIES =		\
   spy_stats_notice.la		\
   spy_stats_p_notice.la		\
   spy_trace_notice.la		\
+  sts_module.la		        \
   example_module.la
