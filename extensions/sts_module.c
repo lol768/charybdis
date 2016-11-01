@@ -17,7 +17,7 @@ static bool sts_visible(struct Client *client_p) {
 }
 
 static const char* sts_data(struct Client *client_p) {
-    if (!IsSSLClient(client_p)) {
+    if (!IsSSL(client_p)) {
         inotice("Called to get STS data for insecure client, giving them the (hardcoded) port\n");
         return "port=6697"; // compliant clients will now reconnect
     } else {
